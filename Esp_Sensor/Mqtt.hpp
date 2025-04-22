@@ -4,17 +4,18 @@
 #include <PubSubClient.h>
 
 class MQTTConfig {
-    public:
-      const char* server;
-      int port;
-      const char* publishTopic;
-      const char* suscribeTopic;
-      const char* clientId;
-  
-      MQTTConfig(const char* server, int port, const char* publishTopic, 
-                const char* suscribeTopic, const char* clientId)
+  public:
+    const char* server;
+    int port;
+    const char* publishTopic;
+    const char* subscribeTopic;
+    const char* clientId;
+    void (*callback)(char*, byte*, unsigned int); 
+    MQTTConfig(const char* server, int port, const char* publishTopic, 
+              const char* subscribeTopic, const char* clientId,
+              void (*callback)(char*, byte*, unsigned int))
         : server(server), port(port), publishTopic(publishTopic), 
-          suscribeTopic(suscribeTopic), clientId(clientId) {}
+        subscribeTopic(subscribeTopic), clientId(clientId), callback(callback) {}
 };
 
 class MQTTClient {
@@ -25,16 +26,6 @@ class MQTTClient {
       WiFiClient wifiClient;
       unsigned long lastReconnectAttempt = 0;
       const unsigned long RECONNECT_INTERVAL = 5000;
-  
-      static void callback(char* topic, byte* payload, unsigned int length) {
-        Serial.print("Mensaje recibido [");
-        Serial.print(topic);
-        Serial.print("]: ");
-        for (unsigned int i = 0; i < length; i++) {
-          Serial.print((char)payload[i]);
-        }
-        Serial.println();
-      }
   
       bool reconnect() {
         while (!client.connected()) {
@@ -56,14 +47,14 @@ class MQTTClient {
     public:
       MQTTClient(NetworkController& net, MQTTConfig& config)
         : network(net), config(config), 
-          client(config.server, config.port, callback, wifiClient) {
+          client(config.server, config.port, config.callback, wifiClient) {
           }
   
       void initialize() {
         network.connect();
         client.setServer(config.server, config.port);
-        client.setCallback(callback);
-        client.setSocketTimeout(30);
+        client.setCallback(config.callback);
+        client.setSocketTimeout(35);
       }
   
       void publish(const char* message) {
@@ -74,7 +65,12 @@ class MQTTClient {
         Serial.println(message);
         client.publish(config.publishTopic, message);
       }
-  
+      void subscribe(){
+        if (!client.connected()) {
+          reconnect();
+        }
+        client.subscribe(config.subscribeTopic);
+      }
       void loop() {
         if (!client.connected()) {
           unsigned long now = millis();
