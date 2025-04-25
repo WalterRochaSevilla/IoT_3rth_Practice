@@ -1,21 +1,23 @@
 #include "Mqtt.hpp"
-NetworkConfig netConfig("wifi_name", "wifi_password");
+#include "ServoController.hpp"
+
+
+NetworkConfig netConfig("Matheo", "cg4hts55fh4fyr7");
 NetworkController wifi(netConfig);
-MQTTConfig mqttConfig("broker.hivemq.com", 1883, "ucb/grupo12/esp32/test", "ucb/grupo12/esp32/test/info", "esp32_actuator_testing_client_grupo_12",
+const int SERVO_PIN = 22;   // Pin del servomotor
+ServoController servoController(SERVO_PIN);
+
+
+MQTTConfig mqttConfig("broker.hivemq.com", 1883, "ucb/grupo12/esp32/test", "ucb/grupo12/esp32/test/door", "esp32_actuator_testing_client_grupo_12",
     [](char* topic, byte* payload, unsigned int length) {
         Serial.print("Mensaje recibido [");
         Serial.print(topic);
         Serial.print("]: ");
-        char message[length + 1];
-        for (unsigned int i = 0; i < length; i++) {
-            Serial.print((char)payload[i]);
-            message[i] = (char)payload[i];
-        }
-        String messageString = String(message);
-        Serial.println();
-        if(messageString == "ON"){
+        byte message;
+        Serial.println(payload[0]);
+        if(payload[0] == 48){
             servoController.open(); // Open the servo
-        } else if(messageString == "OFF"){
+        } else if(payload[0] == 49){
             Serial.println("Turning OFF the actuator");
             servoController.close();
         } else {
@@ -23,8 +25,6 @@ MQTTConfig mqttConfig("broker.hivemq.com", 1883, "ucb/grupo12/esp32/test", "ucb/
         }
     });
 MQTTClient  mqtt(wifi, mqttConfig);
-const int SERVO_PIN = 15;   // Pin del servomotor
-ServoController servoController(SERVO_PIN);
 
 void setup() {
     Serial.begin(115200);
