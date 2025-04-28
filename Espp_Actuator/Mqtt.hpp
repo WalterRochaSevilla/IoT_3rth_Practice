@@ -16,6 +16,9 @@ class MQTTConfig {
               void (*callback)(char*, byte*, unsigned int))
         : server(server), port(port), publishTopic(publishTopic), 
         subscribeTopic(subscribeTopic), clientId(clientId), callback(callback) {}
+      void setCallback(void (*callback)(char*, byte*, unsigned int)) {
+        this->callback = callback;
+      }
 };
 
 class MQTTClient {
