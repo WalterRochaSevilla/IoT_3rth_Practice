@@ -1,6 +1,6 @@
 #pragma once
 #include "Mqtt.hpp"
-#include "MagneticSensor.h"
+#include "MagneticSensor.hpp"
 
 class EspSensor {
     private:
